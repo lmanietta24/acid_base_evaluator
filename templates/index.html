@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Evaluation Result</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Acid-Base Disorder Evaluation Result</h2>
+        
+        {% if warnings %}
+            <div class="warnings">
+                <h3>Warnings:</h3>
+                <ul>
+                    {% for warning in warnings %}
+                        <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        <div class="results">
+            <h3>pH Status:</h3>
+            <p>{{ pH_status }}</p>
+            
+            <h3>Primary Disorders Detected:</h3>
+            {% if is_mixed %}
+                <p>{{ disorders | join(', ') }}</p>
+            {% else %}
+                <p>{{ disorders[0] if disorders else 'None' }}</p>
+            {% endif %}
+            
+            {% if compensation %}
+                <h3>Compensation Assessment:</h3>
+                <p>{{ compensation['Type'] }}</p>
+                {% if 'Expected pH' in compensation %}
+                    <p>Expected pH: {{ compensation['Expected pH'] }}</p>
+                {% elif 'Expected PaCO2' in compensation %}
+                    <p>Expected PaCO2: {{ compensation['Expected PaCO2'] }}</p>
+                {% endif %}
+            {% endif %}
+            
+            {% if AG_info %}
+                <h3>Anion Gap Calculation:</h3>
+                <p>AG = {{ AG_info['AG'] }} mEq/L</p>
+                {% if AG_info['AG_corrected'] != 'N/A' %}
+                    <p>Corrected AG = {{ AG_info['AG_corrected'] }} mEq/L (Adjusted for low albumin)</p>
+                {% else %}
+                    <p>AG is within normal range or already corrected.</p>
+                {% endif %}
+                <p>Excess AG (DAG) = {{ AG_info['DAG'] }} mEq/L</p>
+            {% endif %}
+            
+            {% if is_mixed %}
+                <h3>Concomitant Disorder Assessment:</h3>
+                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
+                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
+            {% elif mixed_disorder %}
+                <h3>Concomitant Disorder Assessment:</h3>
+                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
+                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
+            {% endif %}
+            
+            <h3>Final Diagnosis:</h3>
+            {% if diagnosis %}
+                <p>{{ diagnosis | join(', ') }}</p>
+            {% else %}
+                <p>No acid-base disorder detected.</p>
+            {% endif %}
+            
+            <h3>Summary:</h3>
+            <pre>{{ summary }}</pre>
+        </div>
+        
+        <a href="{{ url_for('index') }}">Evaluate Another Case</a>
+    </div>
+</body>
+</html>
