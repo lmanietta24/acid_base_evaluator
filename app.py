@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from tabulate import tabulate
+import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a secure key in production
+app.secret_key = os.environ.get('SECRET_KEY', 'your_default_secret_key')  # Use a secure secret key in production
 
 def assess_pH(pH):
     if pH > 7.4:
@@ -101,11 +102,8 @@ def identify_mixed_disorder(data, primary_disorders, is_mixed):
     mixed = {}
     # Identify the primary disorder based on the degree of pH deviation
     # For simplicity, assume Metabolic disorder has a greater effect on pH than Respiratory
-    # This can be refined based on clinical knowledge
     if 'Metabolic Acidosis' in primary_disorders and 'Respiratory Alkalosis' in primary_disorders:
         # Calculate the contribution to pH
-        # Metabolic Acidosis: Each 1 mEq/L decrease in HCO3- decreases pH by ~0.015
-        # Respiratory Alkalosis: Each 1 mmHg decrease in PaCO2 increases pH by ~0.008
         delta_pH_acidosis = (24 - data['HCO3']) * 0.015
         delta_pH_alkalosis = (40 - data['PaCO2']) * 0.008
         net_pH_change = delta_pH_acidosis + delta_pH_alkalosis
@@ -125,9 +123,8 @@ def identify_mixed_disorder(data, primary_disorders, is_mixed):
         mixed['Concomitant Disorder'] = concomitant
     
     elif 'Metabolic Alkalosis' in primary_disorders and 'Respiratory Acidosis' in primary_disorders:
-        # Similar logic as above
-        delta_pH_alkalosis = (data['HCO3'] - 24) * 0.015  # Metabolic Alkalosis: each 1 mEq/L increase in HCO3- increases pH by ~0.015
-        delta_pH_acidosis = (data['PaCO2'] - 40) * 0.008  # Respiratory Acidosis: each 1 mmHg increase in PaCO2 decreases pH by ~0.008
+        delta_pH_alkalosis = (data['HCO3'] - 24) * 0.015
+        delta_pH_acidosis = (data['PaCO2'] - 40) * 0.008
         net_pH_change = delta_pH_alkalosis - delta_pH_acidosis
         net_pH = 7.4 + net_pH_change  # Starting from normal pH
         
@@ -265,6 +262,9 @@ def index():
         except ValueError:
             flash("Please enter valid numeric values for all fields.")
             return redirect(url_for('index'))
+    
+    return render_template('index.html')  # Ensure this is outside the POST block
 
-    if __name__ == '__main__':
-        app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
