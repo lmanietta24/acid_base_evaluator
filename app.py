@@ -256,7 +256,7 @@ def index():
             ]
             summary = tabulate(table, headers=['Parameter', 'Value', 'Interpretation'], tablefmt='grid')
             
-            # Render the result template with all calculated data
+            # Render the result template with all calculated data, including 'data'
             return render_template('result.html',
                                    warnings=warnings,
                                    pH_status=pH_status,
@@ -266,7 +266,8 @@ def index():
                                    AG_info=AG_info,
                                    mixed_disorder=mixed_disorder,
                                    diagnosis=diagnosis,
-                                   summary=summary)
+                                   summary=summary,
+                                   data=data)  # Added 'data=data'
         
         except ValueError:
             # Flash a message if non-numeric input is detected
