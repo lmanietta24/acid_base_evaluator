@@ -1,11 +1,14 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from tabulate import tabulate
-import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your_default_secret_key')  # Use a secure secret key in production
+
+# Securely set the secret key using environment variables
+app.secret_key = os.environ.get('SECRET_KEY', 'your_default_secret_key')  # Replace with a secure key in production
 
 def assess_pH(pH):
+    """Assess the pH status."""
     if pH > 7.4:
         return 'Alkalemic'
     elif pH < 7.4:
@@ -14,7 +17,9 @@ def assess_pH(pH):
         return 'Normal'
 
 def determine_primary_disorder(data, pH_status):
+    """Determine the primary acid-base disorder."""
     disorders = []
+    
     # Assess Respiratory Disorders
     if data['PaCO2'] > 40:
         disorders.append('Respiratory Acidosis')
@@ -34,6 +39,7 @@ def determine_primary_disorder(data, pH_status):
         return disorders, False  # Single primary disorder
 
 def assess_compensation(data, primary_disorder):
+    """Assess the compensation mechanism."""
     compensation = {}
     if primary_disorder == 'Respiratory Acidosis':
         # Determine Acute or Chronic based on [HCO3-] levels
@@ -85,6 +91,7 @@ def assess_compensation(data, primary_disorder):
         return compensation
 
 def calculate_anion_gap(data):
+    """Calculate the Anion Gap and related metrics."""
     AG = data['Na'] - (data['Cl'] + data['HCO3'])
     # Correct for albumin if needed
     if data['albumin'] < 4:
@@ -93,12 +100,13 @@ def calculate_anion_gap(data):
         AG_corrected = AG
     DAG = AG_corrected - 12
     return {
-        'AG': round(AG,1),
-        'AG_corrected': round(AG_corrected,1),
-        'DAG': round(DAG,1)
+        'AG': round(AG, 1),
+        'AG_corrected': round(AG_corrected, 1),
+        'DAG': round(DAG, 1)
     }
 
 def identify_mixed_disorder(data, primary_disorders, is_mixed):
+    """Identify mixed acid-base disorders."""
     mixed = {}
     # Identify the primary disorder based on the degree of pH deviation
     # For simplicity, assume Metabolic disorder has a greater effect on pH than Respiratory
@@ -121,10 +129,11 @@ def identify_mixed_disorder(data, primary_disorders, is_mixed):
         
         mixed['Primary Disorder'] = primary
         mixed['Concomitant Disorder'] = concomitant
-    
+
     elif 'Metabolic Alkalosis' in primary_disorders and 'Respiratory Acidosis' in primary_disorders:
-        delta_pH_alkalosis = (data['HCO3'] - 24) * 0.015
-        delta_pH_acidosis = (data['PaCO2'] - 40) * 0.008
+        # Similar logic as above
+        delta_pH_alkalosis = (data['HCO3'] - 24) * 0.015  # Metabolic Alkalosis: each 1 mEq/L increase in HCO3- increases pH by ~0.015
+        delta_pH_acidosis = (data['PaCO2'] - 40) * 0.008  # Respiratory Acidosis: each 1 mmHg increase in PaCO2 decreases pH by ~0.008
         net_pH_change = delta_pH_alkalosis - delta_pH_acidosis
         net_pH = 7.4 + net_pH_change  # Starting from normal pH
         
@@ -140,7 +149,7 @@ def identify_mixed_disorder(data, primary_disorders, is_mixed):
         
         mixed['Primary Disorder'] = primary
         mixed['Concomitant Disorder'] = concomitant
-    
+
     else:
         # Handle other mixed scenarios if needed
         mixed['Primary Disorder'] = 'Complex Mixed Disorder'
@@ -152,7 +161,7 @@ def identify_mixed_disorder(data, primary_disorders, is_mixed):
 def index():
     if request.method == 'POST':
         try:
-            # Retrieve form data
+            # Retrieve and convert form data to floats
             Na = float(request.form['Na'])
             K = float(request.form['K'])
             Cl = float(request.form['Cl'])
@@ -181,7 +190,7 @@ def index():
             if not (22 <= HCO3 <= 26):
                 warnings.append("[HCO3-] is outside the normal range (22-26 mEq/L).")
             
-            # Compile data
+            # Compile data into a dictionary
             data = {
                 'Na': Na,
                 'K': K,
@@ -233,7 +242,7 @@ def index():
                 if mixed_disorder.get('Concomitant Disorder') and mixed_disorder.get('Concomitant Disorder') not in ['No Concomitant Respiratory Disorder', 'No Concomitant Metabolic Disorder', 'N/A']:
                     diagnosis.append(mixed_disorder.get('Concomitant Disorder'))
             
-            # Create summary table
+            # Create summary table using tabulate
             table = [
                 ['pH', data['pH'], pH_status],
                 ['PaCO2', data['PaCO2'], f"{data['PaCO2']} mmHg"],
@@ -247,7 +256,7 @@ def index():
             ]
             summary = tabulate(table, headers=['Parameter', 'Value', 'Interpretation'], tablefmt='grid')
             
-            # Render result template
+            # Render the result template with all calculated data
             return render_template('result.html',
                                    warnings=warnings,
                                    pH_status=pH_status,
@@ -260,11 +269,20 @@ def index():
                                    summary=summary)
         
         except ValueError:
+            # Flash a message if non-numeric input is detected
             flash("Please enter valid numeric values for all fields.")
             return redirect(url_for('index'))
     
-    return render_template('index.html')  # Ensure this is outside the POST block
+    # For GET requests, render the input form
+    return render_template('index.html')
+
+# Custom error handler for 500 Internal Server Error
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
 
 if __name__ == "__main__":
+    # Get the port from environment variables (required by Heroku)
     port = int(os.environ.get("PORT", 5000))
+    # Run the Flask application
     app.run(host='0.0.0.0', port=port, debug=True)
