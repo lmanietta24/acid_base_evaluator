@@ -2,15 +2,19 @@
 <html>
 <head>
     <title>Evaluation Result</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h2>Acid-Base Disorder Evaluation Result</h2>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Acid-Base Disorder Evaluation Result</h2>
         
+        <!-- Display Warnings -->
         {% if warnings %}
-            <div class="warnings">
-                <h3>Warnings:</h3>
+            <div class="alert alert-warning">
+                <h4>Warnings:</h4>
                 <ul>
                     {% for warning in warnings %}
                         <li>{{ warning }}</li>
@@ -19,60 +23,74 @@
             </div>
         {% endif %}
         
-        <div class="results">
-            <h3>pH Status:</h3>
-            <p>{{ pH_status }}</p>
-            
-            <h3>Primary Disorders Detected:</h3>
-            {% if is_mixed %}
-                <p>{{ disorders | join(', ') }}</p>
-            {% else %}
-                <p>{{ disorders[0] if disorders else 'None' }}</p>
-            {% endif %}
-            
-            {% if compensation %}
-                <h3>Compensation Assessment:</h3>
-                <p>{{ compensation['Type'] }}</p>
-                {% if 'Expected pH' in compensation %}
-                    <p>Expected pH: {{ compensation['Expected pH'] }}</p>
-                {% elif 'Expected PaCO2' in compensation %}
-                    <p>Expected PaCO2: {{ compensation['Expected PaCO2'] }}</p>
+        <!-- Results Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <!-- pH Status -->
+                <h5 class="card-title">pH Status:</h5>
+                <p class="card-text">{{ pH_status }}</p>
+                
+                <!-- Primary Disorders Detected -->
+                <h5 class="card-title">Primary Disorders Detected:</h5>
+                <p class="card-text">
+                    {% if is_mixed %}
+                        {{ disorders | join(', ') }}
+                    {% else %}
+                        {{ disorders[0] if disorders else 'None' }}
+                    {% endif %}
+                </p>
+                
+                <!-- Compensation Assessment -->
+                {% if compensation %}
+                    <h5 class="card-title">Compensation Assessment:</h5>
+                    <p class="card-text">{{ compensation['Type'] }}</p>
+                    {% if 'Expected pH' in compensation %}
+                        <p class="card-text">Expected pH: {{ compensation['Expected pH'] }}</p>
+                    {% elif 'Expected PaCO2' in compensation %}
+                        <p class="card-text">Expected PaCO₂: {{ compensation['Expected PaCO2'] }}</p>
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-            
-            {% if AG_info %}
-                <h3>Anion Gap Calculation:</h3>
-                <p>AG = {{ AG_info['AG'] }} mEq/L</p>
-                {% if data['albumin'] < 4 %}
-                    <p>Corrected AG = {{ AG_info['AG_corrected'] }} mEq/L (Adjusted for low albumin)</p>
-                {% else %}
-                    <p>AG is within normal range or already corrected.</p>
+                
+                <!-- Anion Gap Calculation -->
+                {% if AG_info %}
+                    <h5 class="card-title">Anion Gap Calculation:</h5>
+                    <p class="card-text">AG = {{ AG_info['AG'] }} mEq/L</p>
+                    {% if AG_info['AG_corrected'] != 'N/A' %}
+                        <p class="card-text">Corrected AG = {{ AG_info['AG_corrected'] }} mEq/L (Adjusted for low albumin)</p>
+                    {% else %}
+                        <p class="card-text">AG is within normal range or already corrected.</p>
+                    {% endif %}
+                    <p class="card-text">Excess AG (DAG) = {{ AG_info['DAG'] }} mEq/L</p>
                 {% endif %}
-                <p>Excess AG (DAG) = {{ AG_info['DAG'] }} mEq/L</p>
-            {% endif %}
-            
-            {% if is_mixed %}
-                <h3>Concomitant Disorder Assessment:</h3>
-                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
-                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
-            {% elif mixed_disorder %}
-                <h3>Concomitant Disorder Assessment:</h3>
-                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
-                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
-            {% endif %}
-            
-            <h3>Final Diagnosis:</h3>
-            {% if diagnosis %}
-                <p>{{ diagnosis | join(', ') }}</p>
-            {% else %}
-                <p>No acid-base disorder detected.</p>
-            {% endif %}
-            
-            <h3>Summary:</h3>
-            <pre>{{ summary }}</pre>
+                
+                <!-- Concomitant Disorder Assessment -->
+                {% if is_mixed or mixed_disorder.Primary_Disorder %}
+                    <h5 class="card-title">Concomitant Disorder Assessment:</h5>
+                    <p class="card-text">Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
+                    <p class="card-text">Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
+                {% endif %}
+                
+                <!-- Final Diagnosis -->
+                <h5 class="card-title">Final Diagnosis:</h5>
+                <p class="card-text">
+                    {% if diagnosis %}
+                        {{ diagnosis | join(', ') }}
+                    {% else %}
+                        No acid-base disorder detected.
+                    {% endif %}
+                </p>
+                
+                <!-- Summary Table -->
+                <h5 class="card-title">Summary:</h5>
+                <pre>{{ summary }}</pre>
+            </div>
         </div>
         
-        <a href="{{ url_for('index') }}">Evaluate Another Case</a>
+        <!-- Back to Form Button -->
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Evaluate Another Case</a>
     </div>
+    
+    <!-- Bootstrap JS (Optional, for enhanced interactivity) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
