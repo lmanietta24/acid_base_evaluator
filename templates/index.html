@@ -1,78 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Evaluation Result</title>
+    <title>Acid-Base Disorder Evaluator</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h2>Acid-Base Disorder Evaluation Result</h2>
-        
-        {% if warnings %}
-            <div class="warnings">
-                <h3>Warnings:</h3>
-                <ul>
-                    {% for warning in warnings %}
-                        <li>{{ warning }}</li>
-                    {% endfor %}
-                </ul>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Acid-Base Disorder Evaluator</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-danger" role="alert">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
             </div>
-        {% endif %}
-        
-        <div class="results">
-            <h3>pH Status:</h3>
-            <p>{{ pH_status }}</p>
-            
-            <h3>Primary Disorders Detected:</h3>
-            {% if is_mixed %}
-                <p>{{ disorders | join(', ') }}</p>
-            {% else %}
-                <p>{{ disorders[0] if disorders else 'None' }}</p>
-            {% endif %}
-            
-            {% if compensation %}
-                <h3>Compensation Assessment:</h3>
-                <p>{{ compensation['Type'] }}</p>
-                {% if 'Expected pH' in compensation %}
-                    <p>Expected pH: {{ compensation['Expected pH'] }}</p>
-                {% elif 'Expected PaCO2' in compensation %}
-                    <p>Expected PaCO2: {{ compensation['Expected PaCO2'] }}</p>
-                {% endif %}
-            {% endif %}
-            
-            {% if AG_info %}
-                <h3>Anion Gap Calculation:</h3>
-                <p>AG = {{ AG_info['AG'] }} mEq/L</p>
-                {% if AG_info['AG_corrected'] != 'N/A' %}
-                    <p>Corrected AG = {{ AG_info['AG_corrected'] }} mEq/L (Adjusted for low albumin)</p>
-                {% else %}
-                    <p>AG is within normal range or already corrected.</p>
-                {% endif %}
-                <p>Excess AG (DAG) = {{ AG_info['DAG'] }} mEq/L</p>
-            {% endif %}
-            
-            {% if is_mixed %}
-                <h3>Concomitant Disorder Assessment:</h3>
-                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
-                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
-            {% elif mixed_disorder %}
-                <h3>Concomitant Disorder Assessment:</h3>
-                <p>Primary Disorder: {{ mixed_disorder['Primary Disorder'] }}</p>
-                <p>Concomitant Disorder: {{ mixed_disorder['Concomitant Disorder'] }}</p>
-            {% endif %}
-            
-            <h3>Final Diagnosis:</h3>
-            {% if diagnosis %}
-                <p>{{ diagnosis | join(', ') }}</p>
-            {% else %}
-                <p>No acid-base disorder detected.</p>
-            {% endif %}
-            
-            <h3>Summary:</h3>
-            <pre>{{ summary }}</pre>
-        </div>
-        
-        <a href="{{ url_for('index') }}">Evaluate Another Case</a>
+          {% endif %}
+        {% endwith %}
+        <form method="post">
+            <div class="mb-3">
+                <label for="Na" class="form-label">Enter [Na+]:</label>
+                <input type="text" class="form-control" id="Na" name="Na" required>
+            </div>
+            <div class="mb-3">
+                <label for="K" class="form-label">Enter [K+]:</label>
+                <input type="text" class="form-control" id="K" name="K" required>
+            </div>
+            <div class="mb-3">
+                <label for="Cl" class="form-label">Enter [Cl-]:</label>
+                <input type="text" class="form-control" id="Cl" name="Cl" required>
+            </div>
+            <div class="mb-3">
+                <label for="HCO3_bmp" class="form-label">Enter [HCO3-] from BMP:</label>
+                <input type="text" class="form-control" id="HCO3_bmp" name="HCO3_bmp" required>
+            </div>
+            <div class="mb-3">
+                <label for="albumin" class="form-label">Enter Albumin (g/dL):</label>
+                <input type="text" class="form-control" id="albumin" name="albumin" required>
+            </div>
+            <div class="mb-3">
+                <label for="pH" class="form-label">Enter pH:</label>
+                <input type="text" class="form-control" id="pH" name="pH" required>
+            </div>
+            <div class="mb-3">
+                <label for="PaCO2" class="form-label">Enter PaCO2 (mmHg):</label>
+                <input type="text" class="form-control" id="PaCO2" name="PaCO2" required>
+            </div>
+            <div class="mb-3">
+                <label for="PaO2" class="form-label">Enter PaO2 (mmHg):</label>
+                <input type="text" class="form-control" id="PaO2" name="PaO2" required>
+            </div>
+            <div class="mb-3">
+                <label for="HCO3_abg" class="form-label">Enter [HCO3-] from ABG:</label>
+                <input type="text" class="form-control" id="HCO3_abg" name="HCO3_abg" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Evaluate</button>
+        </form>
     </div>
 </body>
 </html>
